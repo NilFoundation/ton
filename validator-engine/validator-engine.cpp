@@ -2677,6 +2677,44 @@ void ValidatorEngine::run_control_query(ton::ton_api::engine_validator_addContro
   check_key(id, std::move(P));
 }
 
+void ValidatorEngine::run_control_query(ton::ton_api::engine_validator_getValidatorKeys &query, td::BufferSlice data,
+                                        ton::PublicKeyHash src, td::uint32 perm, td::Promise<td::BufferSlice> promise) {
+  if (!(perm & ValidatorEnginePermissions::vep_modify)) {
+    promise.set_value(create_control_query_error(td::Status::Error(ton::ErrorCode::error, "not authorized")));
+    return;
+  }
+  if (!started_) {
+    promise.set_value(create_control_query_error(td::Status::Error(ton::ErrorCode::notready, "not started")));
+    return;
+  }
+
+  std::vector<ton::tl_object_ptr<ton::ton_api::engine_validator_validatorKeysSet>> result;
+  result.reserve(config_.validators.size());
+
+  for (const auto &[perm_key, validator] : config_.validators) {
+    std::vector<ton::Bits256> adnl_addrs{};
+    adnl_addrs.reserve(validator.adnl_ids.size());
+
+    for (const auto &adnl_id : validator.adnl_ids) {
+      adnl_addrs.emplace_back(adnl_id.first.bits256_value());
+    }
+
+    std::vector<ton::Bits256> temp_keys{};
+    temp_keys.reserve(validator.temp_keys.size());
+
+    // search temp key
+    for (const auto &temp_key : validator.temp_keys) {
+      temp_keys.emplace_back(temp_key.first.bits256_value());
+    }
+
+    result.emplace_back(ton::create_tl_object<ton::ton_api::engine_validator_validatorKeysSet>(
+        validator.election_date, perm_key.bits256_value(), std::move(adnl_addrs), std::move(temp_keys)));
+  }
+
+  auto b = ton::create_tl_object<ton::ton_api::engine_validator_validatorKeys>(std::move(result));
+  promise.set_value(ton::serialize_tl_object(std::move(b), true));
+}
+
 void ValidatorEngine::run_control_query(ton::ton_api::engine_validator_delAdnlId &query, td::BufferSlice data,
                                         ton::PublicKeyHash src, td::uint32 perm, td::Promise<td::BufferSlice> promise) {
   if (!(perm & ValidatorEnginePermissions::vep_modify)) {
@@ -3269,9 +3307,9 @@ void dump_stats() {
 int main(int argc, char *argv[]) {
   SET_VERBOSITY_LEVEL(verbosity_INFO);
 
-  LOG(INFO) << "\n" <<
-  "BUILD_REVISION: " << BUILD_REVISION << "\n" <<
-  "BUILD_DATE: " << BUILD_DATE << "\n";
+  LOG(INFO) << "\n"
+            << "BUILD_REVISION: " << BUILD_REVISION << "\n"
+            << "BUILD_DATE: " << BUILD_DATE << "\n";
 
   td::set_default_failure_signal_handler().ensure();
 
