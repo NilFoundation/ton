@@ -433,6 +433,8 @@ td::Status GetValidatorsQuery::send() {
   return td::Status::OK();
 }
 
+// =====================================================================================================================
+// -c "getvalidators"
 td::Status GetValidatorsQuery::receive(td::BufferSlice data) {
   TRY_RESULT_PREFIX(f, ton::fetch_tl_object<ton::ton_api::engine_validator_validatorKeys>(std::move(data), true),
                     "received incorrect answer: ");
@@ -444,22 +446,25 @@ td::Status GetValidatorsQuery::receive(td::BufferSlice data) {
     const auto &set = f->validators_[i];
 
     output << "validator" << i << " " << set->election_date_ << " permkey: " << set->perm_key_.to_hex() << "\n";
-
+    // TODO: Find out why and where temp_key & adnl_addrs are MISREPLACED !!!
     for (size_t j = 0; j < set->temp_keys_.size(); ++j) {
-      output << "validator" << i << " " << set->election_date_ << " tempkey" << j << ": " << set->temp_keys_[j].to_hex()
+      output << "validator" << i << " " << set->election_date_ << " tempkey: " << set->adnl_addrs_[j].to_hex()
              << "\n";
     }
 
     for (size_t j = 0; j < set->adnl_addrs_.size(); ++j) {
-      output << "validator" << i << " " << set->election_date_ << " adnl" << j << ": " << set->adnl_addrs_[j].to_hex()
+      output << "validator" << i << " " << set->election_date_ << "    adnl: " << set->temp_keys_[j].to_hex()
              << "\n";
     }
+    output << "------------------------------------------------------------------------------------------------\n";
   }
 
   td::TerminalIO::out() << output.as_cslice();
 
   return td::Status::OK();
-}
+} // engine_validator_getValidatorKeys
+// =====================================================================================================================
+
 td::Status DelAdnlAddrQuery::run() {
   TRY_RESULT_ASSIGN(key_hash_, tokenizer_.get_token<ton::PublicKeyHash>());
   TRY_STATUS(tokenizer_.check_endl());
