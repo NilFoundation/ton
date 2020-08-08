@@ -446,14 +446,14 @@ td::Status GetValidatorsQuery::receive(td::BufferSlice data) {
     const auto &set = f->validators_[i];
 
     output << "validator" << i << " " << set->election_date_ << " permkey: " << set->perm_key_.to_hex() << "\n";
-    // TODO: Find out why and where temp_key & adnl_addrs are MISREPLACED !!!
+    
     for (size_t j = 0; j < set->temp_keys_.size(); ++j) {
-      output << "validator" << i << " " << set->election_date_ << " tempkey: " << set->adnl_addrs_[j].to_hex()
+      output << "validator" << i << " " << set->election_date_ << " tempkey: " << set->temp_keys_[j].to_hex()
              << "\n";
     }
 
     for (size_t j = 0; j < set->adnl_addrs_.size(); ++j) {
-      output << "validator" << i << " " << set->election_date_ << "    adnl: " << set->temp_keys_[j].to_hex()
+      output << "validator" << i << " " << set->election_date_ << "    adnl: " << set->adnl_addrs_[j].to_hex()
              << "\n";
     }
     output << "------------------------------------------------------------------------------------------------\n";
