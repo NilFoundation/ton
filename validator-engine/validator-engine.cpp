@@ -2708,7 +2708,7 @@ void ValidatorEngine::run_control_query(ton::ton_api::engine_validator_getValida
     }
 
     result.emplace_back(ton::create_tl_object<ton::ton_api::engine_validator_validatorKeysSet>(
-        validator.election_date, perm_key.bits256_value(), std::move(adnl_addrs), std::move(temp_keys)));
+        validator.election_date, perm_key.bits256_value(), std::move(temp_keys), std::move(adnl_addrs)));
   }
 
   auto b = ton::create_tl_object<ton::ton_api::engine_validator_validatorKeys>(std::move(result));
