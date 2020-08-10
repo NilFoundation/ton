@@ -1010,7 +1010,7 @@ void CatChainReceiverImpl::alarm() {
       initial_sync_complete_at_ = td::Timestamp::never();
       started_ = true;
       callback_->start();
-      XLOG(INFO) << this << " --- Initial catchain synchronization has been finished. Consensus iterations should be started."
+      XLOG(INFO) << this << " --- Initial catchain synchronization has been finished. Consensus iterations should be started.";
     }
   }
   alarm_timestamp().relax(next_rotate_);
