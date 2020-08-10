@@ -147,7 +147,7 @@ void CatChainReceiverImpl::receive_broadcast_from_overlay(PublicKeyHash src, td:
     return;
   }
   callback_->on_broadcast(src, std::move(data));
-  XLOG(INFO << this  << " +++ New catchain blocks from network "
+  XLOG(INFO) << this  << " +++ New catchain blocks from network "
              << "Public key hash: " << src.tl() << " Data size: " << data.size();
 }
 // ===========================================================================================
