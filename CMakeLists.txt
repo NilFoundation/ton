@@ -566,8 +566,8 @@ if (GIT_SCM AND GITDIR)
           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
           COMMAND ${CMAKE_COMMAND} -E echo_append "#define BUILD_REVISION \"" > ${PROJECT_SOURCE_DIR}/gitrevision.hh
           COMMAND ${GIT_SCM} log -1 "--pretty=format:%H %ai" >> ${PROJECT_SOURCE_DIR}/gitrevision.hh
-          COMMAND ${CMAKE_COMMAND} -E echo "\"" >> ${PROJECT_SOURCE_DIR}/gitrevision.hh
-          COMMAND ${CMAKE_COMMAND} -E echo_append "#define BUILD_DATE \"${build_date}\"" >> ${PROJECT_SOURCE_DIR}/gitrevision.hh
+          COMMAND ${CMAKE_COMMAND} -E echo "\"\n" >> ${PROJECT_SOURCE_DIR}/gitrevision.hh
+          COMMAND ${CMAKE_COMMAND} -E echo_append "#define BUILD_DATE \"${build_date}\"\n" >> ${PROJECT_SOURCE_DIR}/gitrevision.hh
           DEPENDS ${GITDIR}/logs/HEAD
           VERBATIM
           )
