@@ -137,6 +137,8 @@ void ValidatorSessionImpl::finished_processing() {
   check_all();
 }
 
+// ===========================================================================================
+//
 void ValidatorSessionImpl::preprocess_block(catchain::CatChainBlock *block) {
   auto start_time = td::Timestamp::now();
   td::PerfWarningTimer p_timer{"Loong block preprocess", 0.1};
@@ -201,7 +203,8 @@ void ValidatorSessionImpl::preprocess_block(catchain::CatChainBlock *block) {
   VLOG(VALIDATOR_SESSION_DEBUG) << this << ": preprocessed block " << block->hash() << " in "
                                 << static_cast<td::uint32>(1000 * (td::Timestamp::now().at() - start_time.at()))
                                 << "ms: state=" << state->get_hash(description());
-}
+} // ValidatorSessionImpl::preprocess_block
+// ===========================================================================================
 
 void ValidatorSessionImpl::process_broadcast(PublicKeyHash src, td::BufferSlice data) {
   auto src_idx = description().get_source_idx(src);

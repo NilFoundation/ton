@@ -78,3 +78,10 @@ class NativeFd {
 StringBuilder &operator<<(StringBuilder &sb, const NativeFd &fd);
 
 }  // namespace td
+
+//------------------------------------------------------------------------------
+//template <typename Handle, uintptr_t Default>
+//class HandleWrapper {
+//  static_assert(std::is_pointer<Handle>::value, "Handle must be a pointer");
+//  static constexpr Handle DefaultHandle = reinterpret_cast<Handle>(Invalid);
+//};

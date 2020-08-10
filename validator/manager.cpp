@@ -1693,6 +1693,11 @@ void ValidatorManagerImpl::update_shards() {
   {
     allow_validate_ = true;
   }
+  // ----------------------------------
+  // for logging
+  ton::PublicKeyHash validator_id;
+  ton::ValidatorSessionId val_group_id;
+  // ----------------------------------
 
   auto exp_vec = last_masterchain_state_->get_shards();
   auto config = last_masterchain_state_->get_consensus_config();
@@ -1784,10 +1789,11 @@ void ValidatorManagerImpl::update_shards() {
       auto val_set = last_masterchain_state_->get_validator_set(shard);
       auto x = val_set->export_vector();
 
-      auto validator_id = get_validator(shard, val_set);
+      validator_id = get_validator(shard, val_set);
 
       if (!validator_id.is_zero()) {
-        auto val_group_id = get_validator_set_id(shard, val_set, opts_hash, key_seqno, opts);
+         
+        val_group_id = get_validator_set_id(shard, val_set, opts_hash, key_seqno, opts);
 
         if (force_recover) {
           auto r = opts_->check_unsafe_catchain_rotate(last_masterchain_seqno_, val_set->get_catchain_seqno());
@@ -1801,7 +1807,7 @@ void ValidatorManagerImpl::update_shards() {
             val_group_id = sha256_bits256(td::Slice(b, 36));
           }
         }
-        XLOG(INFO) << "validating group " << val_group_id;
+        XLOG(INFO) << "Validating Group " << val_group_id << " key_seqno: " << key_seqno << " Shard Workchain: " << shard.workchain;
         VLOG(VALIDATOR_DEBUG) << "validating group " << val_group_id;
         auto it = validator_groups_.find(val_group_id);
         if (it != validator_groups_.end()) {
@@ -1819,7 +1825,7 @@ void ValidatorManagerImpl::update_shards() {
               td::actor::send_closure(G, &ValidatorGroup::start, prev, last_masterchain_block_id_, last_masterchain_state_->get_unix_time());
             }
             new_validator_groups_.emplace(val_group_id, std::move(G));
-            XLOG(INFO) << "=== NEW Validating Group " << val_group_id;
+            XLOG(INFO) << "=== NEW Validating Group " << val_group_id << " key_seqno: " << key_seqno << " Shard Workchain: " << shard.workchain;
           }
         }
       }
@@ -1831,27 +1837,31 @@ void ValidatorManagerImpl::update_shards() {
       continue;
     }
 
-    auto validator_id = get_validator(shard, val_set);
+    validator_id = get_validator(shard, val_set);
     if (!validator_id.is_zero()) {
-      auto val_group_id = get_validator_set_id(shard, val_set, opts_hash, key_seqno, opts);
+      val_group_id = get_validator_set_id(shard, val_set, opts_hash, key_seqno, opts);
       auto it = next_validator_groups_.find(val_group_id);
       if (it != next_validator_groups_.end()) {
         //CHECK(!it->second.empty());
         new_next_validator_groups_.emplace(val_group_id, std::move(it->second));
       } else {
-        new_next_validator_groups_.emplace(val_group_id,
-                                           create_validator_group(val_group_id, shard, val_set, opts, started_));
+        new_next_validator_groups_.emplace(val_group_id, create_validator_group(val_group_id, shard, val_set, opts, started_));
       }
     }
+    XLOG(INFO) << "### Validator ID: " << validator_id << " Validating Group " << val_group_id
+               << " key_seqno: " << key_seqno << " Shard Workchain: " << shard.workchain << " Shard Shard"
+               << shard.shard;
   }
-
+  
   std::vector<td::actor::ActorId<ValidatorGroup>> gc;
+
   for (auto &v : validator_groups_) {
     if (!v.second.empty()) {
       gc_list_.push_back(v.first);
       gc.push_back(v.second.release());
     }
   }
+
   for (auto &v : next_validator_groups_) {
     if (!v.second.empty()) {
       gc_list_.push_back(v.first);

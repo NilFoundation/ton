@@ -26,6 +26,8 @@ namespace ton {
 
 namespace catchain {
 
+// ===========================================================================================
+// add check if new validator session consensus iteration has been initiated
 void CatChainImpl::send_process() {
   CHECK(receiver_started_);
 
@@ -43,11 +45,15 @@ void CatChainImpl::send_process() {
   }
 
   process_deps_ = std::move(w);
-  VLOG(CATCHAIN_INFO) << this << ": creating block. deps=" << process_deps_;
+  // VLOG(CATCHAIN_INFO) << this << ": creating block. deps=" << process_deps_;
+  XLOG(INFO) << this << " --- Creating block. deps=" << process_deps_;
   callback_->process_blocks(std::move(v));
-  VLOG(CATCHAIN_INFO) << this << ": sent creating block";
-}
+  // VLOG(CATCHAIN_INFO) << this << ": sent creating block";
+  XLOG(INFO) << this << " --- Sent creating block size: " << w.back();  //.end() ;
+} // CatChainImpl::send_process
 
+// ===========================================================================================
+// add check if blocks are processed by catchain and sent to validator session
 void CatChainImpl::send_preprocess(CatChainBlock *block) {
   if (block->preprocess_is_sent()) {
     return;
@@ -63,10 +69,13 @@ void CatChainImpl::send_preprocess(CatChainBlock *block) {
   }
 
   block->preprocess_sent();
-  VLOG(CATCHAIN_INFO) << this << ": preprocessing block " << block->hash() << " src=" << block->source();
+  // VLOG(CATCHAIN_INFO) << this << ": preprocessing block " << block->hash() << " src=" << block->source();
+  XLOG(INFO) << this << " --- Preprocessing block " << block->hash() << " src=" << block->source();
   callback_->preprocess_block(block);
-  VLOG(CATCHAIN_INFO) << this << ": sent preprocessing block " << block->hash() << " src=" << block->source();
-}
+  // VLOG(CATCHAIN_INFO) << this << ": sent preprocessing block " << block->hash() << " src=" << block->source();
+  XLOG(INFO) << this << " --- Sent preprocessing block " << block->hash() << " src=" << block->source();
+} // CatChainImpl::send_preprocess
+// ===========================================================================================
 
 void CatChainImpl::set_processed(CatChainBlock *block) {
   if (block->is_processed()) {
@@ -85,9 +94,12 @@ void CatChainImpl::set_processed(CatChainBlock *block) {
   block->set_processed();
 }
 
+// ===========================================================================================
+// add dump payload size to log
 void CatChainImpl::processed_block(td::BufferSlice payload) {
   CHECK(receiver_started_);
-  VLOG(CATCHAIN_INFO) << this << ": created block. deps=" << process_deps_ << " payload_size=" << payload.size();
+  // VLOG(CATCHAIN_INFO) << this << ": created block. deps=" << process_deps_ << " payload_size=" << payload.size();
+  XLOG(INFO) << this << "--- Created block. deps=" << process_deps_ << " Payload_size= " << payload.size();
   td::actor::send_closure(receiver_, &CatChainReceiverInterface::add_block, std::move(payload),
                           std::move(process_deps_));
   CHECK(active_process_);
@@ -96,12 +108,13 @@ void CatChainImpl::processed_block(td::BufferSlice payload) {
     send_process();
   } else {
     active_process_ = false;
-    VLOG(CATCHAIN_INFO) << this << ": finished processing";
+    // VLOG(CATCHAIN_INFO) << this << ": finished processing";
     callback_->finished_processing();
-    VLOG(CATCHAIN_INFO) << this << ": sent finished processing";
+    // VLOG(CATCHAIN_INFO) << this << ": sent finished processing";
     alarm_timestamp() = td::Timestamp::in(opts_.idle_timeout);
   }
 }
+// ===========================================================================================
 
 void CatChainImpl::need_new_block(td::Timestamp t) {
   if (!receiver_started_) {
