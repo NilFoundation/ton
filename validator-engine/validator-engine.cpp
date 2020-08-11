@@ -3313,6 +3313,14 @@ void dump_stats() {
 int main(int argc, char *argv[]) {
   SET_VERBOSITY_LEVEL(verbosity_INFO);
 
+  #ifndef BUILD_REVISION
+  #define BUILD_REVISION "Unknown"
+  #endif
+
+  #ifndef BUILD_DATE
+  #define BUILD_DATE __DATE__ __TIME__
+  #endif
+
   LOG(INFO) << "\n"
             << "BUILD_REVISION: " << BUILD_REVISION << "\n"
             << "BUILD_DATE: " << BUILD_DATE << "\n";

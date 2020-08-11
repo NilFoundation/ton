@@ -63,18 +63,18 @@ void CatChainReceiverImpl::deliver_block(CatChainReceivedBlock *block) {
 }
 // ===========================================================================================
 //  mv-log: dump ADNL source address and data size
-void CatChainReceiverImpl::receive_block(adnl::AdnlNodeIdShort src, 
-                                         tl_object_ptr<ton_api::catchain_block> block,
+void CatChainReceiverImpl::receive_block(adnl::AdnlNodeIdShort src, tl_object_ptr<ton_api::catchain_block> block,
                                          td::BufferSlice payload) {
   auto id = CatChainReceivedBlock::block_hash(this, block, payload);
-  
+
   auto B = get_block(id);
   if (B && B->initialized()) {
     return;
   }
 
   if (block->incarnation_ != incarnation_) {
-    VLOG(CATCHAIN_WARNING) << this << ": dropping broken block from " << src << ": bad incarnation " << block->incarnation_;
+    VLOG(CATCHAIN_WARNING) << this << ": dropping broken block from " << src << ": bad incarnation "
+                           << block->incarnation_;
     return;
   }
 
@@ -86,7 +86,8 @@ void CatChainReceiverImpl::receive_block(adnl::AdnlNodeIdShort src,
 
   if (block->src_ == static_cast<td::int32>(local_idx_)) {
     if (!allow_unsafe_self_blocks_resync_ || started_) {
-      LOG(FATAL) << this << ": received unknown SELF block from " << src << " (unsafe=" << allow_unsafe_self_blocks_resync_ << ")";
+      LOG(FATAL) << this << ": received unknown SELF block from " << src
+                 << " (unsafe=" << allow_unsafe_self_blocks_resync_ << ")";
     } else {
       LOG(ERROR) << this << ": received unknown SELF block from " << src << ". UPDATING LOCAL DATABASE. UNSAFE";
       initial_sync_complete_at_ = td::Timestamp::in(300.0);
@@ -97,11 +98,12 @@ void CatChainReceiverImpl::receive_block(adnl::AdnlNodeIdShort src,
   create_block(std::move(block), td::SharedSlice{payload.as_slice()});
 
   if (!opts_.debug_disable_db) {
-    db_.set(id, std::move(raw_data), [](td::Unit) {}, 1.0);
+    db_.set(
+        id, std::move(raw_data), [](td::Unit) {}, 1.0);
   }
-  XLOG(INFO) << this << " --- ADNL source address: " << src.pubkey_hash() << " Data size (block payload): " << payload.size();
+  XLOG(INFO) << " --- ADNL source address: " << src.pubkey_hash() << " Data size (block payload): " << payload.size();
   block_written_to_db(id);
-} // CatChainReceiverImpl::receive_block
+}  // CatChainReceiverImpl::receive_block
 // ===========================================================================================
 
 void CatChainReceiverImpl::receive_block_answer(adnl::AdnlNodeIdShort src, td::BufferSlice data) {
@@ -147,7 +149,7 @@ void CatChainReceiverImpl::receive_broadcast_from_overlay(PublicKeyHash src, td:
     return;
   }
   callback_->on_broadcast(src, std::move(data));
-  XLOG(INFO) << this  << " +++ New catchain blocks from network "
+  XLOG(INFO) << " +++ New catchain blocks from network "
              << "Public key hash: " << src.tl() << " Data size: " << data.size();
 }
 // ===========================================================================================
@@ -981,7 +983,7 @@ void CatChainReceiverImpl::written_unsafe_root_block(CatChainReceivedBlock *bloc
 }
 
 // ===========================================================================================
-// 
+//
 void CatChainReceiverImpl::alarm() {
   alarm_timestamp() = td::Timestamp::never();
   if (next_sync_ && next_sync_.is_in_past()) {
@@ -1010,15 +1012,15 @@ void CatChainReceiverImpl::alarm() {
       initial_sync_complete_at_ = td::Timestamp::never();
       started_ = true;
       callback_->start();
-      XLOG(INFO) << this << " --- Initial catchain synchronization has been finished. Consensus iterations should be started."
+      XLOG(INFO) << " --- Initial catchain synchronization has been finished. Consensus iterations should be started.";
     }
   }
   alarm_timestamp().relax(next_rotate_);
   alarm_timestamp().relax(next_sync_);
   alarm_timestamp().relax(initial_sync_complete_at_);
-  XLOG(INFO) << this << " --- Times: Next Rotate: " << next_rotate_ << " Next Sync: " << next_sync_
-             << " Initial sync complete at: " << initial_sync_complete_at_;
-} // CatChainReceiverImpl::alarm
+  XLOG(INFO) << " --- Times: Next Rotate: " << next_rotate_.at_unix() << " Next Sync: " << next_sync_.at_unix()
+             << " Initial sync complete at: " << initial_sync_complete_at_.at_unix();
+}  // CatChainReceiverImpl::alarm
 // ===========================================================================================
 
 void CatChainReceiverImpl::send_fec_broadcast(td::BufferSlice data) {

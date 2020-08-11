@@ -46,11 +46,11 @@ void CatChainImpl::send_process() {
 
   process_deps_ = std::move(w);
   // VLOG(CATCHAIN_INFO) << this << ": creating block. deps=" << process_deps_;
-  XLOG(INFO) << this << " --- Creating block. deps=" << process_deps_;
+  XLOG(INFO) << " --- Creating block. deps=" << process_deps_;
   callback_->process_blocks(std::move(v));
   // VLOG(CATCHAIN_INFO) << this << ": sent creating block";
-  XLOG(INFO) << this << " --- Sent creating block size: " << w.back();  //.end() ;
-} // CatChainImpl::send_process
+  XLOG(INFO) << " --- Sent creating block size: " << w.back();  //.end() ;
+}  // CatChainImpl::send_process
 
 // ===========================================================================================
 // add check if blocks are processed by catchain and sent to validator session
@@ -70,11 +70,11 @@ void CatChainImpl::send_preprocess(CatChainBlock *block) {
 
   block->preprocess_sent();
   // VLOG(CATCHAIN_INFO) << this << ": preprocessing block " << block->hash() << " src=" << block->source();
-  XLOG(INFO) << this << " --- Preprocessing block " << block->hash() << " src=" << block->source();
+  XLOG(INFO) << " --- Preprocessing block " << block->hash() << " src=" << block->source();
   callback_->preprocess_block(block);
   // VLOG(CATCHAIN_INFO) << this << ": sent preprocessing block " << block->hash() << " src=" << block->source();
-  XLOG(INFO) << this << " --- Sent preprocessing block " << block->hash() << " src=" << block->source();
-} // CatChainImpl::send_preprocess
+  XLOG(INFO) << " --- Sent preprocessing block " << block->hash() << " src=" << block->source();
+}  // CatChainImpl::send_preprocess
 // ===========================================================================================
 
 void CatChainImpl::set_processed(CatChainBlock *block) {
@@ -99,7 +99,7 @@ void CatChainImpl::set_processed(CatChainBlock *block) {
 void CatChainImpl::processed_block(td::BufferSlice payload) {
   CHECK(receiver_started_);
   // VLOG(CATCHAIN_INFO) << this << ": created block. deps=" << process_deps_ << " payload_size=" << payload.size();
-  XLOG(INFO) << this << "--- Created block. deps=" << process_deps_ << " Payload_size= " << payload.size();
+  XLOG(INFO) << "--- Created block. deps=" << process_deps_ << " Payload_size= " << payload.size();
   td::actor::send_closure(receiver_, &CatChainReceiverInterface::add_block, std::move(payload),
                           std::move(process_deps_));
   CHECK(active_process_);

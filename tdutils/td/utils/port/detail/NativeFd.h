@@ -65,7 +65,7 @@ class NativeFd {
   Fd release();
 
   Status validate() const;
-
+  
  private:
 #if TD_PORT_POSIX
   MovableValue<Fd, -1> fd_;
@@ -78,10 +78,3 @@ class NativeFd {
 StringBuilder &operator<<(StringBuilder &sb, const NativeFd &fd);
 
 }  // namespace td
-
-//------------------------------------------------------------------------------
-//template <typename Handle, uintptr_t Default>
-//class HandleWrapper {
-//  static_assert(std::is_pointer<Handle>::value, "Handle must be a pointer");
-//  static constexpr Handle DefaultHandle = reinterpret_cast<Handle>(Invalid);
-//};
