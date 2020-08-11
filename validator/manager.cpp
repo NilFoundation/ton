@@ -1849,7 +1849,7 @@ void ValidatorManagerImpl::update_shards() {
       }
     }
     XLOG(INFO) << "### Validator ID: " << validator_id << " Validating Group " << val_group_id
-               << " key_seqno: " << key_seqno << " Shard Workchain: " << shard.workchain << " Shard Shard"
+               << " key_seqno: " << key_seqno << " Shard Workchain: " << shard.workchain << " Shard ID: "
                << shard.shard;
   }
   

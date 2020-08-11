@@ -46,10 +46,10 @@ void CatChainImpl::send_process() {
 
   process_deps_ = std::move(w);
   // VLOG(CATCHAIN_INFO) << this << ": creating block. deps=" << process_deps_;
-  XLOG(INFO) << " --- Creating block. deps=" << process_deps_;
+  XLOG(INFO) << " --- Creating block. deps=" << process_deps_.back();
   callback_->process_blocks(std::move(v));
   // VLOG(CATCHAIN_INFO) << this << ": sent creating block";
-  XLOG(INFO) << " --- Sent creating block size: " << w.back();  //.end() ;
+  XLOG(INFO) << " --- Sent creating block size: " << w.back();
 }  // CatChainImpl::send_process
 
 // ===========================================================================================
@@ -99,7 +99,7 @@ void CatChainImpl::set_processed(CatChainBlock *block) {
 void CatChainImpl::processed_block(td::BufferSlice payload) {
   CHECK(receiver_started_);
   // VLOG(CATCHAIN_INFO) << this << ": created block. deps=" << process_deps_ << " payload_size=" << payload.size();
-  XLOG(INFO) << "--- Created block. deps=" << process_deps_ << " Payload_size= " << payload.size();
+  XLOG(INFO) << "--- Created block. deps=" << process_deps_.back() << " Payload_size= " << payload.size();
   td::actor::send_closure(receiver_, &CatChainReceiverInterface::add_block, std::move(payload),
                           std::move(process_deps_));
   CHECK(active_process_);
