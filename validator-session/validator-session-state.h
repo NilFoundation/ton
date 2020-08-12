@@ -589,7 +589,7 @@ using ApproveVector = CntSortedVector<const SessionBlockCandidate*, SessionBlock
 class ValidatorSessionRoundAttemptState : public ValidatorSessionDescription::RootObject {
  public:
   
-     static HashType create_hash(ValidatorSessionDescription& desc, td::uint32 seqno, HashType votes, HashType precommitted, HashType vote_for, bool vote_for_inited) {
+  static HashType create_hash(ValidatorSessionDescription& desc, td::uint32 seqno, HashType votes, HashType precommitted, HashType vote_for, bool vote_for_inited) {
     auto obj = create_tl_object<ton_api::hashable_validatorSessionRoundAttempt>(seqno, votes, precommitted, vote_for, vote_for_inited);
     return desc.compute_hash(serialize_tl_object(obj, true).as_slice());
   }
@@ -638,7 +638,6 @@ class ValidatorSessionRoundAttemptState : public ValidatorSessionDescription::Ro
   // ===============================================================================================================
   static const ValidatorSessionRoundAttemptState* create(ValidatorSessionDescription& desc, td::uint32 seqno, const VoteVector* votes, const CntVector<bool>* precommitted, const SentBlock* vote_for, bool vote_for_inited) {
     auto hash = create_hash(desc, seqno, get_vs_hash(desc, votes), get_vs_hash(desc, precommitted), get_vs_hash(desc, vote_for), vote_for_inited);
-    
     auto r = lookup(desc, seqno, votes, precommitted, vote_for, vote_for_inited, hash, true);
     if (r) {
       return r;

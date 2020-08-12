@@ -416,13 +416,19 @@ const ValidatorSessionRoundAttemptState* ValidatorSessionRoundAttemptState::merg
       vote_for = right->vote_for_;
     }
   }
+ 
+  if (vote_for_inited) {
+    XLOG(INFO) << "~~~ Vote for block ID: " << SentBlock::get_block_id(vote_for)
+               << " Left: " << SentBlock::get_block_id(left->vote_for_)
+               << " Right: " << SentBlock::get_block_id(right->vote_for_);
+  }
 
   auto precommitted = CntVector<bool>::merge(desc, left->precommitted_, right->precommitted_);
   auto votes = VoteVector::merge(desc, left->votes_, right->votes_, 
                                  [&](const SessionVoteCandidate* l,  const SessionVoteCandidate* r) {
                                    return SessionVoteCandidate::merge(desc, l, r);
                                  });
-
+   
   return ValidatorSessionRoundAttemptState::create(desc, left->seqno_, std::move(votes), std::move(precommitted), vote_for, vote_for_inited);
 }
 
@@ -466,8 +472,7 @@ const ValidatorSessionRoundAttemptState* ValidatorSessionRoundAttemptState::acti
     return state;
   }
 
-  return ValidatorSessionRoundAttemptState::create(desc, state->seqno_, state->votes_, state->precommitted_,
-                                                   x->get_block(), true);
+  return ValidatorSessionRoundAttemptState::create(desc, state->seqno_, state->votes_, state->precommitted_, x->get_block(), true);
 }
 
 const ValidatorSessionRoundAttemptState* ValidatorSessionRoundAttemptState::action(

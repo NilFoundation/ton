@@ -1807,8 +1807,11 @@ void ValidatorManagerImpl::update_shards() {
             val_group_id = sha256_bits256(td::Slice(b, 36));
           }
         }
-        XLOG(INFO) << "Validating Group " << val_group_id << " key_seqno: " << key_seqno << " Shard Workchain: " << shard.workchain;
-        VLOG(VALIDATOR_DEBUG) << "validating group " << val_group_id;
+        XLOG(INFO) << "+++ Validator ID: " << validator_id << " Validating Group " << val_group_id
+                   << " key_seqno: " << key_seqno << " Shard Workchain: " << shard.workchain
+                   << " Shard ID: " << shard.shard;
+        ;
+        // VLOG(VALIDATOR_DEBUG) << "validating group " << val_group_id;
         auto it = validator_groups_.find(val_group_id);
         if (it != validator_groups_.end()) {
           new_validator_groups_.emplace(val_group_id, std::move(it->second));
@@ -1825,7 +1828,9 @@ void ValidatorManagerImpl::update_shards() {
               td::actor::send_closure(G, &ValidatorGroup::start, prev, last_masterchain_block_id_, last_masterchain_state_->get_unix_time());
             }
             new_validator_groups_.emplace(val_group_id, std::move(G));
-            XLOG(INFO) << "=== NEW Validating Group " << val_group_id << " key_seqno: " << key_seqno << " Shard Workchain: " << shard.workchain;
+            XLOG(INFO) << "+++ NEW Validating Group: " << val_group_id << " Validator ID: " << validator_id 
+                << " key_seqno: " << key_seqno << " Shard Workchain: " << shard.workchain 
+                << " Shard ID: " << shard.shard;
           }
         }
       }

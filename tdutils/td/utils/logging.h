@@ -86,7 +86,6 @@
 #define XLOG(level) LOG_IMPL(level, level, true, ::td::Slice())
 #define XLOG_IF(level, condition) LOG_IMPL(level, level, condition, #condition)
 #define XLOG_ROTATE() ::td::Xlog_interface->rotate()
-#define YLOG(level) XLOG_IMPL(level, level, true, TD_DEFINE_STR(level))
 // ===========================================================================================
 
 #if TD_CLANG

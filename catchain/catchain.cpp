@@ -43,10 +43,10 @@ void CatChainImpl::send_process() {
       set_processed(B);
     }
   }
-  //XLOG(INFO) << " --- Sent creating block. Block size: " << w.size();
+  
   process_deps_ = std::move(w);
   //VLOG(CATCHAIN_INFO) << this << ": creating block. deps=" << process_deps_;
-  XLOG(INFO) << " --- Creating block. deps=" << process_deps_ << " Block hashes size: " << process_deps_.size();
+  XLOG(INFO) << "+++ Creating block. deps=" << process_deps_ << " Block hashes size: " << process_deps_.size();
   callback_->process_blocks(std::move(v));
   // VLOG(CATCHAIN_INFO) << this << ": sent creating block";
     
@@ -70,13 +70,14 @@ void CatChainImpl::send_preprocess(CatChainBlock *block) {
 
   block->preprocess_sent();
   //VLOG(CATCHAIN_INFO) << this << ": preprocessing block " << block->hash() << " src=" << block->source();
-  YLOG(INFO) << " --- Preprocessing block. Block hash: " << block->hash() << " Height: " << block->height() << " src=" << block->source();
+  XLOG(INFO) << "+++ Preprocessing block. Block hash: " << block->hash() << " Height: " << block->height() << " src=" << block->source();
   callback_->preprocess_block(block);
   // VLOG(CATCHAIN_INFO) << this << ": sent preprocessing block " << block->hash() << " src=" << block->source();
-  YLOG(INFO) << " --- Sent preprocessed block. Block hash: " << block->hash() << " Height: " << block->height() << " src=" << block->source();
+  XLOG(INFO) << "+++ Sent preprocessed block. Block hash: " << block->hash() << " Height: " << block->height() << " src=" << block->source();
 }  // CatChainImpl::send_preprocess
-// ===========================================================================================
 
+// ===========================================================================================
+//
 void CatChainImpl::set_processed(CatChainBlock *block) {
   if (block->is_processed()) {
     return;
@@ -99,9 +100,10 @@ void CatChainImpl::set_processed(CatChainBlock *block) {
 void CatChainImpl::processed_block(td::BufferSlice payload) {
   CHECK(receiver_started_);
   // VLOG(CATCHAIN_INFO) << this << ": created block. deps=" << process_deps_ << " payload_size=" << payload.size();
-  YLOG(INFO) << "--- Created block. deps=" << process_deps_ << " Payload_size= " << payload.size();
-  td::actor::send_closure(receiver_, &CatChainReceiverInterface::add_block, std::move(payload),
-                          std::move(process_deps_));
+  XLOG(INFO) << "+++ Created block. deps=" << process_deps_ << " Payload size= " << payload.size();
+  
+  td::actor::send_closure(receiver_, &CatChainReceiverInterface::add_block, std::move(payload), std::move(process_deps_));
+  
   CHECK(active_process_);
   if (top_blocks_.size() > 0 || force_process_) {
     force_process_ = false;
@@ -112,11 +114,12 @@ void CatChainImpl::processed_block(td::BufferSlice payload) {
         callback_->finished_processing();
     // VLOG(CATCHAIN_INFO) << this << ": sent finished processing";
     alarm_timestamp() = td::Timestamp::in(opts_.idle_timeout);
-    YLOG(INFO) << "--- Finished processing. Sent.";
+    XLOG(INFO) << "+++ Finished processing. Sent.";
   }
 }
-// ===========================================================================================
 
+// ===========================================================================================
+//
 void CatChainImpl::need_new_block(td::Timestamp t) {
   if (!receiver_started_) {
     return;
@@ -130,6 +133,8 @@ void CatChainImpl::need_new_block(td::Timestamp t) {
   }
 }
 
+// ===========================================================================================
+//
 void CatChainImpl::on_new_block(td::uint32 src_id, td::uint32 fork, CatChainBlockHash hash, CatChainBlockHeight height,
                                 CatChainBlockHash prev, std::vector<CatChainBlockHash> deps,
                                 std::vector<CatChainBlockHeight> vt, td::SharedSlice data) {
@@ -179,6 +184,8 @@ void CatChainImpl::on_new_block(td::uint32 src_id, td::uint32 fork, CatChainBloc
   }
 }
 
+// ===========================================================================================
+//
 void CatChainImpl::on_blame(td::uint32 src_id) {
   if (blamed_sources_[src_id]) {
     return;
@@ -211,20 +218,28 @@ void CatChainImpl::on_blame(td::uint32 src_id) {
   }
 }
 
+// ===========================================================================================
+//
 void CatChainImpl::on_custom_message(PublicKeyHash src, td::BufferSlice data) {
   callback_->process_message(src, std::move(data));
 }
 
+// ===========================================================================================
+//
 void CatChainImpl::on_custom_query(PublicKeyHash src, td::BufferSlice data, td::Promise<td::BufferSlice> promise) {
   callback_->process_query(src, std::move(data), std::move(promise));
 }
 
+// ===========================================================================================
+//
 void CatChainImpl::on_broadcast(PublicKeyHash src, td::BufferSlice data) {
   VLOG(CATCHAIN_INFO) << this << ": processing broadcast";
   callback_->process_broadcast(src, std::move(data));
   VLOG(CATCHAIN_INFO) << this << ": sent processing broadcast";
 }
 
+// ===========================================================================================
+//
 void CatChainImpl::on_receiver_started() {
   receiver_started_ = true;
   callback_->started();
@@ -233,6 +248,8 @@ void CatChainImpl::on_receiver_started() {
   send_process();
 }
 
+// ===========================================================================================
+//
 CatChainImpl::CatChainImpl(std::unique_ptr<Callback> callback, CatChainOptions opts,
                            td::actor::ActorId<keyring::Keyring> keyring, td::actor::ActorId<adnl::Adnl> adnl,
                            td::actor::ActorId<overlay::Overlays> overlay_manager, std::vector<CatChainNode> ids,
@@ -257,6 +274,8 @@ CatChainImpl::CatChainImpl(std::unique_ptr<Callback> callback, CatChainOptions o
   args_ = std::make_unique<Args>(keyring, adnl, overlay_manager, std::move(ids), local_id, unique_hash);
 }
 
+// ===========================================================================================
+//
 void CatChainImpl::alarm() {
   alarm_timestamp() = td::Timestamp::never();
   if (!active_process_) {
@@ -265,6 +284,8 @@ void CatChainImpl::alarm() {
   }
 }
 
+// ===========================================================================================
+//
 void CatChainImpl::start_up() {
   class ChainCb : public CatChainReceiverInterface::Callback {
    public:
@@ -305,6 +326,8 @@ void CatChainImpl::start_up() {
   //alarm_timestamp() = td::Timestamp::in(opts_.idle_timeout);
 }
 
+// ===========================================================================================
+//
 td::actor::ActorOwn<CatChain> CatChain::create(std::unique_ptr<Callback> callback, CatChainOptions opts,
                                                td::actor::ActorId<keyring::Keyring> keyring,
                                                td::actor::ActorId<adnl::Adnl> adnl,
@@ -317,6 +340,8 @@ td::actor::ActorOwn<CatChain> CatChain::create(std::unique_ptr<Callback> callbac
                                                db_suffix, allow_unsafe_self_blocks_resync);
 }
 
+// ===========================================================================================
+//
 CatChainBlock *CatChainImpl::get_block(CatChainBlockHash hash) const {
   auto it = blocks_.find(hash);
   if (it == blocks_.end()) {
@@ -326,6 +351,8 @@ CatChainBlock *CatChainImpl::get_block(CatChainBlockHash hash) const {
   }
 }
 
+// ===========================================================================================
+//
 void CatChainImpl::destroy() {
   td::actor::send_closure(receiver_, &CatChainReceiverInterface::destroy);
   receiver_.release();
