@@ -57,20 +57,26 @@ void ValidatorSessionImpl::process_blocks(std::vector<catchain::CatChainBlock *>
         cur_round_, B->root_hash_, file_hash, collated_data_file_hash));
     cnt++;
     sent_generated_ = true;
+    XLOG(INFO) << "~~~ NEW block prepared. Round: " << cur_round_ << " Rhash: " << B->root_hash_
+               << " Fhash:  " << file_hash << " CDFhash: " << collated_data_file_hash;
   }
 
   auto to_approve = real_state_->choose_blocks_to_approve(description(), local_idx());
+  
   for (auto &block : to_approve) {
     auto id = SentBlock::get_block_id(block);
     if (approved_.count(id) && approved_[id].first <= td::Clocks::system()) {
       msgs.emplace_back(create_tl_object<ton_api::validatorSession_message_approvedBlock>(
           cur_round_, id, approved_[id].second.clone()));
       cnt++;
+      XLOG(INFO) << "~~~ Approved block. Round: " << cur_round_ << " Candidate ID:" << id;
     }
   }
+
   for (auto &B : pending_reject_) {
     msgs.emplace_back(
         create_tl_object<ton_api::validatorSession_message_rejectedBlock>(cur_round_, B.first, std::move(B.second)));
+    XLOG(INFO) << "~~~ Rejected block. Round: " << cur_round_ << " Candidate ID:" << B.first;
   }
   pending_reject_.clear();
 
@@ -82,6 +88,7 @@ void ValidatorSessionImpl::process_blocks(std::vector<catchain::CatChainBlock *>
       msgs.emplace_back(
           create_tl_object<ton_api::validatorSession_message_commit>(cur_round_, signed_block_, std::move(signature_)));
       cnt++;
+      XLOG(INFO) << "~~~ Commit msg. Round: " << cur_round_ << " Signed block:" << signed_block_;
     }
   }
 
@@ -91,11 +98,12 @@ void ValidatorSessionImpl::process_blocks(std::vector<catchain::CatChainBlock *>
   }
 
   if (real_state_->check_need_generate_vote_for(description(), local_idx(), att)) {
-    VLOG(VALIDATOR_SESSION_INFO) << this << ": generating VOTEFOR";
+    // VLOG(VALIDATOR_SESSION_INFO) << this << ": generating VOTEFOR";
     auto msg = real_state_->generate_vote_for(description(), local_idx(), att);
     CHECK(msg);
     real_state_ = ValidatorSessionState::action(description(), real_state_, local_idx(), att, msg.get());
     msgs.push_back(std::move(msg));
+    XLOG(INFO) << "~~~ VOTEFOR block. Round: " << cur_round_ << " Candidate local ID:" << local_idx() << " Attempt: " << att;
   }
 
   while (true) {
@@ -491,8 +499,8 @@ void ValidatorSessionImpl::check_generate_slot() {
 
         td::PerfWarningTimer timer{"too long block generation", 1.0};
 
-        auto P = td::PromiseCreator::lambda([SelfId = actor_id(this), print_id = print_id(), timer = std::move(timer),
-                                             round = cur_round_](td::Result<BlockCandidate> R) {
+        auto P = td::PromiseCreator::lambda([SelfId = actor_id(this), print_id = print_id(), timer = std::move(timer), round = cur_round_](td::Result<BlockCandidate> R) 
+        {
           if (R.is_ok()) {
             auto c = R.move_as_ok();
             td::actor::send_closure(SelfId, &ValidatorSessionImpl::generated_block, round, c.id.root_hash,
@@ -501,7 +509,9 @@ void ValidatorSessionImpl::check_generate_slot() {
             LOG(WARNING) << print_id << ": failed to generate block candidate: " << R.move_as_error();
           }
         });
+        
         callback_->on_generate_slot(cur_round_, std::move(P));
+        XLOG(INFO) << "~~~ Sess init collattion. Round: " << cur_round_ << " Callback addr: " << callback_.get();
       } else {
         alarm_timestamp().relax(t);
       }
@@ -564,8 +574,9 @@ void ValidatorSessionImpl::try_approve_block(const SentBlock *block) {
       pending_approve_.insert(block_id);
       CHECK(static_cast<td::int32>(cur_round_) == B->round_);
 
-      callback_->on_candidate(cur_round_, description().get_source_public_key(block->get_src_idx()), B->root_hash_,
-                              B->data_.clone(), B->collated_data_.clone(), std::move(P));
+      callback_->on_candidate(cur_round_, description().get_source_public_key(block->get_src_idx()), B->root_hash_, B->data_.clone(), B->collated_data_.clone(), std::move(P));
+      XLOG(INFO) << "~~~ Sess init validation. Round: " << cur_round_ << " Block ID: " << block_id
+                 << " Callback addr: " << callback_.get();
     } else if (T.is_in_past()) {
       if (!active_requests_.count(block_id)) {
         auto v = virtual_state_->get_block_approvers(description(), block_id);
@@ -596,7 +607,6 @@ void ValidatorSessionImpl::try_approve_block(const SentBlock *block) {
     }
   } else {
     approved_[block_id] = std::pair<td::uint32, td::BufferSlice>{0, td::BufferSlice{}};
-
     request_new_block(false);
   }
 }
@@ -816,14 +826,16 @@ void ValidatorSessionImpl::on_new_round(td::uint32 round) {
     auto it = blocks_[0].find(SentBlock::get_block_id(block));
     if (!block) {
       callback_->on_block_skipped(cur_round_);
+      XLOG(INFO) << "~~~ Block skipped. Round: " << cur_round_ << " Block ID: " << SentBlock::get_block_id(block)
+                 << " Callback: " << callback_.get();
     } else if (it == blocks_[0].end()) {
-      callback_->on_block_committed(cur_round_, description().get_source_public_key(block->get_src_idx()),
-                                    block->get_root_hash(), block->get_file_hash(), td::BufferSlice(),
-                                    std::move(export_sigs), std::move(export_approve_sigs));
+      callback_->on_block_committed(cur_round_, description().get_source_public_key(block->get_src_idx()), block->get_root_hash(), block->get_file_hash(), td::BufferSlice(), std::move(export_sigs), std::move(export_approve_sigs));
+      XLOG(INFO) << "~~~ First block commited. Round: " << cur_round_ << " Block ID: " << SentBlock::get_block_id(block)
+                 << " Callback: " << callback_.get();
     } else {
-      callback_->on_block_committed(cur_round_, description().get_source_public_key(block->get_src_idx()),
-                                    block->get_root_hash(), block->get_file_hash(), it->second->data_.clone(),
-                                    std::move(export_sigs), std::move(export_approve_sigs));
+      callback_->on_block_committed(cur_round_, description().get_source_public_key(block->get_src_idx()), block->get_root_hash(), block->get_file_hash(), it->second->data_.clone(), std::move(export_sigs), std::move(export_approve_sigs));
+      XLOG(INFO) << "~~~ Block commited. Round: " << cur_round_ << " Block ID: " << SentBlock::get_block_id(block)
+                 << " Callback: " << callback_.get();
     }
     cur_round_++;
     for (size_t i = 0; i < blocks_.size() - 1; i++) {
@@ -846,21 +858,22 @@ void ValidatorSessionImpl::on_catchain_started() {
 
   for (auto &x : X) {
     if (x) {
-      auto P = td::PromiseCreator::lambda([SelfId = actor_id(this), round = virtual_state_->cur_round_seqno(),
-                                           src = description().get_source_id(x->get_src_idx()),
-                                           root_hash = x->get_root_hash()](td::Result<BlockCandidate> R) {
+      auto P = td::PromiseCreator::lambda(
+          [SelfId = actor_id(this), round = virtual_state_->cur_round_seqno(), src = description().get_source_id(x->get_src_idx()), root_hash = x->get_root_hash()]
+      (td::Result<BlockCandidate> R) {
         if (R.is_error()) {
           LOG(ERROR) << "failed to get candidate: " << R.move_as_error();
         } else {
           auto B = R.move_as_ok();
-          auto broadcast = create_tl_object<ton_api::validatorSession_candidate>(
-              src.tl(), round, root_hash, std::move(B.data), std::move(B.collated_data));
-          td::actor::send_closure(SelfId, &ValidatorSessionImpl::process_broadcast, src,
-                                  serialize_tl_object(broadcast, true));
+          auto broadcast = create_tl_object<ton_api::validatorSession_candidate>(src.tl(), round, root_hash, std::move(B.data), std::move(B.collated_data));
+          td::actor::send_closure(SelfId, &ValidatorSessionImpl::process_broadcast, src, serialize_tl_object(broadcast, true));
         }
       });
-      callback_->get_approved_candidate(description().get_source_public_key(x->get_src_idx()), x->get_root_hash(),
-                                        x->get_file_hash(), x->get_collated_data_file_hash(), std::move(P));
+
+      callback_->get_approved_candidate(description().get_source_public_key(x->get_src_idx()), x->get_root_hash(), x->get_file_hash(), x->get_collated_data_file_hash(), std::move(P));
+
+      XLOG(INFO) << "~~~ Get approved candidate. Round: " << virtual_state_->cur_round_seqno() << " Block ID: " << x->get_block_id
+                 << " Callback: " << callback_.get();
     }
   }
 

@@ -114,7 +114,7 @@ void CatChainImpl::processed_block(td::BufferSlice payload) {
         callback_->finished_processing();
     // VLOG(CATCHAIN_INFO) << this << ": sent finished processing";
     alarm_timestamp() = td::Timestamp::in(opts_.idle_timeout);
-    XLOG(INFO) << "+++ Finished processing. Sent.";
+        XLOG(INFO) << "+++ Finished processing. Sent." << " Callback addr:" << callback_.get();
   }
 }
 
