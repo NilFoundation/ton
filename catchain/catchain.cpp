@@ -43,13 +43,13 @@ void CatChainImpl::send_process() {
       set_processed(B);
     }
   }
-
+  //XLOG(INFO) << " --- Sent creating block. Block size: " << w.size();
   process_deps_ = std::move(w);
   //VLOG(CATCHAIN_INFO) << this << ": creating block. deps=" << process_deps_;
-  YLOG(INFO) << " --- Creating block. deps=" << process_deps_;
+  XLOG(INFO) << " --- Creating block. deps=" << process_deps_ << " Block hashes size: " << process_deps_.size();
   callback_->process_blocks(std::move(v));
   // VLOG(CATCHAIN_INFO) << this << ": sent creating block";
-  XLOG(INFO) << " --- Sent creating block. Block hash: " << w.back();
+    
 }  // CatChainImpl::send_process
 
 // ===========================================================================================
