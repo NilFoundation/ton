@@ -3323,7 +3323,8 @@ int main(int argc, char *argv[]) {
 
   LOG(INFO) << "\n"
             << "BUILD_REVISION: " << BUILD_REVISION << "\n"
-            << "BUILD_DATE: " << BUILD_DATE << "\n";
+            << "BUILD_DATE: " << BUILD_DATE << "\n"
+            << "BLOCK SUPPORTED VERSION: " << BLK_SUPPORTED_VER << "\n"; // BLK_SUPPORTED_VER in common.h
 
   td::set_default_failure_signal_handler().ensure();
 

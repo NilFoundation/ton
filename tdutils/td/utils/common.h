@@ -21,7 +21,7 @@
 #include "td/utils/config.h"
 #include "td/utils/port/platform.h"
 
-constexpr auto BLK_SUPPORTED_VER = 4;
+constexpr auto BLK_SUPPORTED_VER = 5;
 
 // clang-format off
 #if TD_WINDOWS
