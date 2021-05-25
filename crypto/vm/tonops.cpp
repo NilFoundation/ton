@@ -358,7 +358,7 @@ int exec_verify_groth16(VmState* st) {
   using namespace nil::crypto3::algebra;
   using namespace nil::crypto3::zk;
 
-  typedef zk::snark::r1cs_gg_ppzksnark<curve_type> scheme_type;
+  typedef zk::snark::r1cs_gg_ppzksnark<CurveType> scheme_type;
 
   VM_LOG(st) << "execute VERGRTH16";
   Stack& stack = st->get_stack();
@@ -448,7 +448,7 @@ void register_ton_crypto_ops(OpcodeTable& cp0) {
       .insert(OpcodeInstr::mksimple(0xf902, 16, "SHA256U", exec_compute_sha256))
       .insert(OpcodeInstr::mksimple(0xf910, 16, "CHKSIGNU", std::bind(exec_ed25519_check_signature, _1, false)))
       .insert(OpcodeInstr::mksimple(0xf911, 16, "CHKSIGNS", std::bind(exec_ed25519_check_signature, _1, true)))
-      .insert(OpcodeInstr::mksimple(0xf912, 16, "VERGRTH16", exec_verify_groth16<curves::mnt4<298>>));
+      .insert(OpcodeInstr::mksimple(0xf912, 16, "VERGRTH16", exec_verify_groth16<curves::bls12<381>>));
 }
 
 int exec_compute_data_size(VmState* st, int mode) {
