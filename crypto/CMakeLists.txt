@@ -10,6 +10,7 @@ add_subdirectory(fft)
 add_subdirectory(hash)
 add_subdirectory(multiprecision)
 add_subdirectory(zk)
+add_subdirectory(marshalling)
 
 set(TON_CRYPTO_SOURCE
   Ed25519.cpp

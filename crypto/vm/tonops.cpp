@@ -42,8 +42,9 @@
 
 #include <nil/crypto3/zk/snark/schemes/ppzksnark/r1cs_gg_ppzksnark.hpp>
 #include <nil/crypto3/zk/snark/schemes/ppzksnark/r1cs_gg_ppzksnark/marshalling.hpp>
-
 #include <nil/crypto3/zk/snark/algorithms/generate.hpp>
+
+#include <nil/marshalling/status_type.hpp>
 
 namespace vm {
 namespace {
@@ -376,7 +377,16 @@ int exec_verify_groth16(VmState* st) {
   
   std::vector<unsigned char> data(data_cell_proof_data, data_cell_proof_data + len);
 
-  auto tup = nil::marshalling::verifier_input_deserializer_tvm<scheme_type>::verifier_input_process(data.cbegin(), data.cend());
+  typename nil::marshalling::status_type processingStatus = nil::marshalling::status_type::success;
+
+  auto tup = nil::marshalling::verifier_input_deserializer_tvm<scheme_type>::verifier_input_process(
+    data.cbegin(), data.cend(), processingStatus);
+
+  if (processingStatus != nil::marshalling::status_type::success){
+
+      stack.push_bool(false);
+      return 0;
+  }
 
   typename scheme_type::proof_type de_prf = std::get<2>(tup);
   typename scheme_type::primary_input_type de_pi = std::get<1>(tup);
