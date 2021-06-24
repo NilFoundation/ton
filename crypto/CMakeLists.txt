@@ -271,7 +271,7 @@ add_library(ton_crypto STATIC ${TON_CRYPTO_SOURCE})
 target_include_directories(ton_crypto PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>)
 target_link_libraries(ton_crypto PUBLIC ${OPENSSL_CRYPTO_LIBRARY} tdutils
-    tddb_utils crypto3::zk crypto3::algebra crypto3::fft crypto3::multiprecision)
+    tddb_utils crypto3::zk crypto3::algebra crypto3::fft crypto3::multiprecision crypto3::marshalling)
 if (NOT WIN32)
   target_link_libraries(ton_crypto PUBLIC dl z)
 endif()
