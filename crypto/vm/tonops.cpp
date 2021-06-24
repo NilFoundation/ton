@@ -18,6 +18,7 @@
 */
 
 #include <vector>
+#include <queue>
 #include <tuple>
 
 #include <functional>
@@ -354,6 +355,37 @@ int exec_compute_hash(VmState* st, int mode) {
   return 0;
 }
 
+namespace {
+
+  std::vector<unsigned char> obtain_cells_data(td::Ref<vm::DataCell> in_cl) {
+    std::vector<unsigned char> byte_blob;
+
+    std::queue<td::Ref<vm::DataCell>> cl_q;
+    cl_q.push(in_cl);
+    while (!cl_q.empty()) {
+      td::Ref<vm::DataCell> cl = cl_q.front();
+      cl_q.pop();
+
+      const unsigned char* current_reference_data = cl->get_data();
+
+      std::size_t current_data_size = cl->size() / 8;
+
+      byte_blob.reserve(byte_blob.size() + current_data_size);
+      byte_blob.insert(byte_blob.end(), current_reference_data, 
+        current_reference_data + current_data_size);
+
+      unsigned count = cl->size_refs();
+
+      for (unsigned i = 0; i < count; i++) {
+        cl_q.push(td::Ref<vm::DataCell>(cl->get_ref(i)));
+      }
+    }
+
+    return byte_blob;
+  }
+
+}
+
 template <typename CurveType>
 int exec_verify_groth16(VmState* st) {
   using namespace nil::crypto3::algebra;
@@ -364,18 +396,8 @@ int exec_verify_groth16(VmState* st) {
   VM_LOG(st) << "execute VERGRTH16";
   Stack& stack = st->get_stack();
   auto proof_cell = stack.pop_cell();
-
-  CellBuilder cb;
-  auto data_cell_proof = cb.store_ref(proof_cell).finalize();
-  const unsigned char*  data_cell_proof_data = data_cell_proof->get_data();
-
-  if (data_cell_proof->size() & 7) {
-    throw VmError{Excno::cell_und, "Proof DataCell does not consist of an integer number of bytes"};
-  }
   
-  auto len = (data_cell_proof->size() << 3);
-  
-  std::vector<unsigned char> data(data_cell_proof_data, data_cell_proof_data + len);
+  std::vector<unsigned char> data = obtain_cells_data(td::Ref<vm::DataCell>(proof_cell));
 
   typename nil::marshalling::status_type processingStatus = nil::marshalling::status_type::success;
 
