@@ -53,7 +53,7 @@
 #include "vm/cells/MerkleProof.h"
 #include "ton/ton-shard.h"
 
-#if TD_DARWIN || TD_LINUX
+#if TD_DARWIN || TD_LINUX || TD_FREEBSD
 #include <unistd.h>
 #include <fcntl.h>
 #endif
@@ -118,6 +118,7 @@ void ValidatorEngineConsole::run() {
   add_query_runner(std::make_unique<QueryRunnerImpl<AddValidatorAdnlAddrQuery>>());
   add_query_runner(std::make_unique<QueryRunnerImpl<ChangeFullNodeAdnlAddrQuery>>());
   add_query_runner(std::make_unique<QueryRunnerImpl<AddLiteServerQuery>>());
+  add_query_runner(std::make_unique<QueryRunnerImpl<GetValidatorsQuery>>());
   add_query_runner(std::make_unique<QueryRunnerImpl<DelAdnlAddrQuery>>());
   add_query_runner(std::make_unique<QueryRunnerImpl<DelDhtIdQuery>>());
   add_query_runner(std::make_unique<QueryRunnerImpl<DelValidatorPermanentKeyQuery>>());
